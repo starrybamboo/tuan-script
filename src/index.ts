@@ -10,7 +10,7 @@
 export * from './interpreter/types';
 // export * from './interpreter/DicenicInterpreter';
 // export * from './interpreter/ExecutionContext';
-// export * from './utils/TypeConverter';
+export * from './utils/TypeConverter';
 // export * from './utils/DiceCalculator';
 // export * from './utils/StringInterpolator';
 // export * from './errors/DicenicError';
