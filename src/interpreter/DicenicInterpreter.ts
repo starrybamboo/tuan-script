@@ -18,7 +18,12 @@ import {
   AdditiveExpressionContext,
   MultiplicativeExpressionContext,
   RelationalExpressionContext,
-  EqualityExpressionContext
+  EqualityExpressionContext,
+  LogicalOrExpressionContext,
+  LogicalAndExpressionContext,
+  UnaryExpressionContext,
+  AssignmentExpressionContext,
+  PostfixExpressionContext
 } from '../generated/DicenicParser';
 import { ExecutionContext } from './ExecutionContext';
 import { DicenicValue, VariableType } from './types';
@@ -511,6 +516,194 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
   }
 
   /**
+   * 访问逻辑或表达式节点
+   * 实现短路求值：如果左操作数为true，则不计算右操作数
+   * @param ctx 逻辑或表达式上下文
+   * @returns 逻辑或运算结果
+   */
+  visitLogicalOrExpression(ctx: LogicalOrExpressionContext): DicenicValue {
+    // 获取第一个操作数
+    let result = this.visit(ctx.logicalAndExpression(0));
+    
+    // 处理后续的逻辑或运算
+    const expressions = ctx.logicalAndExpression();
+    for (let i = 1; i < expressions.length; i++) {
+      // 短路求值：如果当前结果为true，直接返回
+      if (TypeConverter.toBoolean(result)) {
+        return {
+          type: VariableType.NUMBER,
+          value: 1
+        };
+      }
+      
+      // 计算右操作数
+      const rightOperand = this.visit(ctx.logicalAndExpression(i));
+      
+      // 执行逻辑或运算
+      const leftBool = TypeConverter.toBoolean(result);
+      const rightBool = TypeConverter.toBoolean(rightOperand);
+      
+      result = {
+        type: VariableType.NUMBER,
+        value: (leftBool || rightBool) ? 1 : 0
+      };
+    }
+    
+    return result;
+  }
+
+  /**
+   * 访问逻辑与表达式节点
+   * 实现短路求值：如果左操作数为false，则不计算右操作数
+   * @param ctx 逻辑与表达式上下文
+   * @returns 逻辑与运算结果
+   */
+  visitLogicalAndExpression(ctx: LogicalAndExpressionContext): DicenicValue {
+    // 获取第一个操作数
+    let result = this.visit(ctx.equalityExpression(0));
+    
+    // 处理后续的逻辑与运算
+    const expressions = ctx.equalityExpression();
+    for (let i = 1; i < expressions.length; i++) {
+      // 短路求值：如果当前结果为false，直接返回
+      if (!TypeConverter.toBoolean(result)) {
+        return {
+          type: VariableType.NUMBER,
+          value: 0
+        };
+      }
+      
+      // 计算右操作数
+      const rightOperand = this.visit(ctx.equalityExpression(i));
+      
+      // 执行逻辑与运算
+      const leftBool = TypeConverter.toBoolean(result);
+      const rightBool = TypeConverter.toBoolean(rightOperand);
+      
+      result = {
+        type: VariableType.NUMBER,
+        value: (leftBool && rightBool) ? 1 : 0
+      };
+    }
+    
+    return result;
+  }
+
+  /**
+   * 访问一元表达式节点
+   * 支持逻辑非(!)、负号(-)和正号(+)运算符
+   * @param ctx 一元表达式上下文
+   * @returns 一元运算结果
+   */
+  visitUnaryExpression(ctx: UnaryExpressionContext): DicenicValue {
+    // 检查是否有一元运算符
+    const logicalNot = ctx.LOGICAL_NOT();
+    const minus = ctx.MINUS();
+    const plus = ctx.PLUS();
+    
+    if (logicalNot) {
+      // 逻辑非运算
+      const operand = this.visit(ctx.unaryExpression()!);
+      const boolValue = TypeConverter.toBoolean(operand);
+      
+      return {
+        type: VariableType.NUMBER,
+        value: boolValue ? 0 : 1
+      };
+    } else if (minus) {
+      // 负号运算
+      const operand = this.visit(ctx.unaryExpression()!);
+      const numValue = TypeConverter.toNumber(operand);
+      
+      return {
+        type: VariableType.NUMBER,
+        value: -numValue
+      };
+    } else if (plus) {
+      // 正号运算（实际上不改变值，但确保转换为数字）
+      const operand = this.visit(ctx.unaryExpression()!);
+      const numValue = TypeConverter.toNumber(operand);
+      
+      return {
+        type: VariableType.NUMBER,
+        value: numValue
+      };
+    } else {
+      // 没有一元运算符，访问赋值表达式
+      const assignmentExpression = ctx.assignmentExpression();
+      if (assignmentExpression) {
+        return this.visit(assignmentExpression);
+      }
+    }
+    
+    return { type: VariableType.NUMBER, value: 0 };
+  }
+
+  /**
+   * 访问赋值表达式节点
+   * 支持基本赋值（=）和复合赋值（+=, -=, *=, /=, %=）
+   * @param ctx 赋值表达式上下文
+   * @returns 赋值结果
+   */
+  visitAssignmentExpression(ctx: AssignmentExpressionContext): DicenicValue {
+    // 获取左操作数（被赋值的变量）
+    const postfixExpression = ctx.postfixExpression();
+    
+    // 检查是否有赋值运算符
+    const assignOp = ctx.ASSIGN();
+    const plusAssignOp = ctx.PLUS_ASSIGN();
+    const minusAssignOp = ctx.MINUS_ASSIGN();
+    const multAssignOp = ctx.MULT_ASSIGN();
+    const divAssignOp = ctx.DIV_ASSIGN();
+    const modAssignOp = ctx.MOD_ASSIGN();
+    
+    // 如果没有赋值运算符，直接访问后缀表达式
+    if (!assignOp && !plusAssignOp && !minusAssignOp && !multAssignOp && !divAssignOp && !modAssignOp) {
+      return this.visit(postfixExpression);
+    }
+    
+    // 获取右操作数（赋值的值）
+    const rightExpression = ctx.expression();
+    if (!rightExpression) {
+      return this.visit(postfixExpression);
+    }
+    
+    const rightValue = this.visit(rightExpression);
+    
+    // 确定赋值运算符类型
+    let operator: string;
+    if (assignOp) {
+      operator = '=';
+    } else if (plusAssignOp) {
+      operator = '+=';
+    } else if (minusAssignOp) {
+      operator = '-=';
+    } else if (multAssignOp) {
+      operator = '*=';
+    } else if (divAssignOp) {
+      operator = '/=';
+    } else if (modAssignOp) {
+      operator = '%=';
+    } else {
+      return this.visit(postfixExpression);
+    }
+    
+    // 执行赋值操作
+    return this.performAssignment(postfixExpression, rightValue, operator);
+  }
+
+  /**
+   * 访问后缀表达式节点
+   * @param ctx 后缀表达式上下文
+   * @returns 后缀表达式结果
+   */
+  visitPostfixExpression(ctx: PostfixExpressionContext): DicenicValue {
+    // 后缀表达式目前只包含主表达式
+    const primaryExpression = ctx.primaryExpression();
+    return this.visit(primaryExpression);
+  }
+
+  /**
    * 默认访问方法，用于处理未实现的节点类型
    * @param tree 解析树节点
    * @returns 默认值
@@ -544,5 +737,95 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
    */
   visitErrorNode(node: any): DicenicValue {
     return { type: VariableType.NUMBER, value: 0 };
+  }
+
+  /**
+   * 执行赋值操作
+   * @param leftExpression 左操作数表达式（被赋值的变量）
+   * @param rightValue 右操作数值
+   * @param operator 赋值运算符
+   * @returns 赋值结果
+   */
+  private performAssignment(leftExpression: PostfixExpressionContext, rightValue: DicenicValue, operator: string): DicenicValue {
+    // 获取左操作数的主表达式
+    const primaryExpression = leftExpression.primaryExpression();
+    
+    // 检查左操作数是否为标识符或特殊变量
+    const identifier = primaryExpression.identifier();
+    const specialVariable = primaryExpression.specialVariable();
+    
+    let finalValue: DicenicValue;
+    
+    if (operator === '=') {
+      // 基本赋值：直接使用右操作数的值
+      finalValue = rightValue;
+    } else {
+      // 复合赋值：需要先获取左操作数的当前值
+      let currentValue: DicenicValue;
+      
+      if (identifier) {
+        const varName = identifier.text;
+        currentValue = this.context.getVariable(varName);
+      } else if (specialVariable) {
+        const text = specialVariable.text;
+        if (text.startsWith('$') && text.length > 2) {
+          const prefix = text.charAt(1);
+          const name = text.substring(2);
+          currentValue = this.context.getSpecialVariable(prefix, name);
+        } else {
+          currentValue = { type: VariableType.NUMBER, value: 0 };
+        }
+      } else {
+        throw new Error('Invalid left-hand side in assignment');
+      }
+      
+      // 根据复合赋值运算符执行相应的运算
+      switch (operator) {
+        case '+=':
+          finalValue = this.performArithmeticOperation(currentValue, rightValue, '+');
+          break;
+        case '-=':
+          finalValue = this.performArithmeticOperation(currentValue, rightValue, '-');
+          break;
+        case '*=':
+          finalValue = this.performArithmeticOperation(currentValue, rightValue, '*');
+          break;
+        case '/=':
+          finalValue = this.performArithmeticOperation(currentValue, rightValue, '/');
+          break;
+        case '%=':
+          finalValue = this.performArithmeticOperation(currentValue, rightValue, '%');
+          break;
+        default:
+          throw new Error(`Unknown assignment operator: ${operator}`);
+      }
+    }
+    
+    // 执行实际的赋值操作
+    if (identifier) {
+      // 普通变量赋值
+      const varName = identifier.text;
+      this.context.setVariable(varName, finalValue);
+    } else if (specialVariable) {
+      // 特殊变量赋值
+      const text = specialVariable.text;
+      if (text.startsWith('$') && text.length > 2) {
+        const prefix = text.charAt(1);
+        const name = text.substring(2);
+        
+        // 检查写入权限
+        if (!this.context.canWriteSpecialVariable(prefix)) {
+          throw new Error(`Cannot write to read-only variable: ${text}`);
+        }
+        
+        this.context.setSpecialVariable(prefix, name, finalValue);
+      } else {
+        throw new Error(`Invalid special variable format: ${text}`);
+      }
+    } else {
+      throw new Error('Invalid left-hand side in assignment');
+    }
+    
+    return finalValue;
   }
 }

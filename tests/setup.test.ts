@@ -22,7 +22,7 @@ describe('项目环境配置验证', () => {
     // 动态导入以避免编译时错误
     const { DicenicLexer } = await import('../src/generated/DicenicLexer');
     const { DicenicParser } = await import('../src/generated/DicenicParser');
-    
+
     expect(DicenicLexer).toBeDefined();
     expect(DicenicParser).toBeDefined();
   });

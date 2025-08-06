@@ -27,7 +27,7 @@ describe('DicenicInterpreter', () => {
     const lexer = new DicenicLexer(inputStream);
     const tokenStream = new CommonTokenStream(lexer);
     const parser = new DicenicParser(tokenStream);
-    
+
     const parseTree = parser.program();
     return interpreter.interpret(parseTree);
   }
@@ -77,12 +77,12 @@ describe('DicenicInterpreter', () => {
       };
       const contextWithData = new ExecutionContext(initialData);
       const interpreterWithData = new DicenicInterpreter(contextWithData);
-      
+
       const inputStream = new ANTLRInputStream('$a力量');
       const lexer = new DicenicLexer(inputStream);
       const tokenStream = new CommonTokenStream(lexer);
       const parser = new DicenicParser(tokenStream);
-      
+
       const parseTree = parser.program();
       const result = interpreterWithData.interpret(parseTree);
       expect(result).toBe('15');
@@ -125,12 +125,12 @@ describe('DicenicInterpreter', () => {
       };
       const contextWithData = new ExecutionContext(initialData);
       const interpreterWithData = new DicenicInterpreter(contextWithData);
-      
+
       const inputStream = new ANTLRInputStream('"力量值：{$a力量}"');
       const lexer = new DicenicLexer(inputStream);
       const tokenStream = new CommonTokenStream(lexer);
       const parser = new DicenicParser(tokenStream);
-      
+
       const parseTree = parser.program();
       const result = interpreterWithData.interpret(parseTree);
       expect(result).toBe('力量值：15');
@@ -170,7 +170,7 @@ describe('DicenicInterpreter', () => {
       let lastValue = interpreter.getLastValue();
       expect(lastValue.type).toBe(VariableType.STRING);
       expect(lastValue.value).toBe('hello');
-      
+
       executeScript('123');
       lastValue = interpreter.getLastValue();
       expect(lastValue.type).toBe(VariableType.NUMBER);
@@ -266,7 +266,7 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行大于比较', () => {
       let result = executeScript('5 > 3');
       expect(result).toBe('1'); // true转换为1
-      
+
       result = executeScript('3 > 5');
       expect(result).toBe('0'); // false转换为0
     });
@@ -274,7 +274,7 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行小于比较', () => {
       let result = executeScript('3 < 5');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 < 3');
       expect(result).toBe('0');
     });
@@ -282,10 +282,10 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行大于等于比较', () => {
       let result = executeScript('5 >= 5');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 >= 3');
       expect(result).toBe('1');
-      
+
       result = executeScript('3 >= 5');
       expect(result).toBe('0');
     });
@@ -293,10 +293,10 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行小于等于比较', () => {
       let result = executeScript('3 <= 5');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 <= 5');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 <= 3');
       expect(result).toBe('0');
     });
@@ -304,7 +304,7 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行相等比较', () => {
       let result = executeScript('5 == 5');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 == 3');
       expect(result).toBe('0');
     });
@@ -312,7 +312,7 @@ describe('DicenicInterpreter', () => {
     test('应该正确执行不等比较', () => {
       let result = executeScript('5 != 3');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 != 5');
       expect(result).toBe('0');
     });
@@ -320,10 +320,10 @@ describe('DicenicInterpreter', () => {
     test('应该正确处理字符串比较', () => {
       let result = executeScript('"hello" == "hello"');
       expect(result).toBe('1');
-      
+
       result = executeScript('"hello" == "world"');
       expect(result).toBe('0');
-      
+
       result = executeScript('"hello" != "world"');
       expect(result).toBe('1');
     });
@@ -332,7 +332,7 @@ describe('DicenicInterpreter', () => {
       // 数字和字符串的相等性比较应该转换为字符串比较
       let result = executeScript('5 == "5"');
       expect(result).toBe('1');
-      
+
       result = executeScript('5 == "hello"');
       expect(result).toBe('0');
     });
@@ -434,11 +434,11 @@ describe('DicenicInterpreter', () => {
       // 数字
       let result = executeScript('42');
       expect(result).toBe('42');
-      
+
       // 字符串
       result = executeScript('"Hello"');
       expect(result).toBe('Hello');
-      
+
       // 掷骰表达式
       result = executeScript('1d1'); // 确定结果
       expect(result).toBe('1');

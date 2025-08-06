@@ -118,6 +118,11 @@ DICE: [0-9]+ [dD] [0-9]+;
 STRING: '"' (~["\r\n\\] | '\\' .)* '"' 
       | '\'' (~['\r\n\\] | '\\' .)* '\'';
 
+// 关键字（必须在标识符之前定义）
+IF: 'if';
+ELSE: 'else';
+WHILE: 'while';
+
 // 特殊变量：$前缀 + [arsd] + 标识符
 SPECIAL_VAR: '$' [arsd] [a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*;
 
@@ -159,10 +164,7 @@ LBRACE: '{';
 RBRACE: '}';
 SEMICOLON: ';';
 
-// 关键字
-IF: 'if';
-ELSE: 'else';
-WHILE: 'while';
+
 
 // 空白字符和注释
 WS: [ \t\r\n]+ -> skip;

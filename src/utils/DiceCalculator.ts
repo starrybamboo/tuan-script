@@ -67,7 +67,7 @@ export class DiceCalculator {
       return false;
     }
 
-    // 检查是否为正数
+    // 检查是否为正数 - 掷骰次数必须大于0，骰子面数必须大于0
     if (count <= 0 || sides <= 0) {
       return false;
     }
