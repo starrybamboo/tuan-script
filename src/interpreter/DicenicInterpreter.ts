@@ -23,7 +23,10 @@ import {
   LogicalAndExpressionContext,
   UnaryExpressionContext,
   AssignmentExpressionContext,
-  PostfixExpressionContext
+  PostfixExpressionContext,
+  TernaryExpressionContext,
+  IfStatementContext,
+  BlockContext
 } from '../generated/DicenicParser';
 import { ExecutionContext } from './ExecutionContext';
 import { DicenicValue, VariableType } from './types';
@@ -112,6 +115,63 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
     }
     
     return { type: VariableType.NUMBER, value: 0 };
+  }
+
+  /**
+   * 访问if语句节点
+   * 实现条件判断和分支执行，支持else分支
+   * @param ctx if语句上下文
+   * @returns if语句执行结果
+   */
+  visitIfStatement(ctx: IfStatementContext): DicenicValue {
+    // 获取条件表达式
+    const conditionExpression = ctx.expression();
+    const conditionValue = this.visit(conditionExpression);
+    
+    // 将条件值转换为布尔值
+    const condition = TypeConverter.toBoolean(conditionValue);
+    
+    // 获取语句列表
+    const statements = ctx.statement();
+    
+    if (condition) {
+      // 条件为真，执行第一个语句（if分支）
+      if (statements.length > 0) {
+        return this.visit(statements[0]);
+      }
+    } else {
+      // 条件为假，检查是否有else分支
+      const elseToken = ctx.ELSE();
+      if (elseToken && statements.length > 1) {
+        // 执行第二个语句（else分支）
+        return this.visit(statements[1]);
+      }
+    }
+    
+    // 如果没有执行任何分支，返回默认值
+    return { type: VariableType.NUMBER, value: 0 };
+  }
+
+  /**
+   * 访问代码块节点
+   * 执行代码块中的所有语句，返回最后一个语句的结果
+   * @param ctx 代码块上下文
+   * @returns 代码块执行结果
+   */
+  visitBlock(ctx: BlockContext): DicenicValue {
+    let result: DicenicValue = { type: VariableType.NUMBER, value: 0 };
+    
+    // 获取代码块中的所有语句
+    const statements = ctx.statement();
+    
+    // 依次执行所有语句
+    for (const statement of statements) {
+      result = this.visit(statement);
+      // 更新最后值
+      this.lastValue = result;
+    }
+    
+    return result;
   }
 
   /**
@@ -513,6 +573,43 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
       type: VariableType.NUMBER,
       value: result ? 1 : 0
     };
+  }
+
+  /**
+   * 访问三元表达式节点
+   * 实现条件运算符 condition ? trueValue : falseValue
+   * @param ctx 三元表达式上下文
+   * @returns 三元运算结果
+   */
+  visitTernaryExpression(ctx: TernaryExpressionContext): DicenicValue {
+    // 获取条件表达式
+    const condition = this.visit(ctx.logicalOrExpression());
+    
+    // 检查是否有三元运算符
+    const questionToken = ctx.QUESTION();
+    const colonToken = ctx.COLON();
+    
+    // 如果没有三元运算符，直接返回条件表达式的结果
+    if (!questionToken || !colonToken) {
+      return condition;
+    }
+    
+    // 获取表达式列表
+    const expressions = ctx.expression();
+    if (expressions.length < 2) {
+      return condition;
+    }
+    
+    // 根据条件值决定执行哪个分支
+    const conditionValue = TypeConverter.toBoolean(condition);
+    
+    if (conditionValue) {
+      // 条件为真，执行第一个表达式（true分支）
+      return this.visit(expressions[0]);
+    } else {
+      // 条件为假，执行第二个表达式（false分支）
+      return this.visit(expressions[1]);
+    }
   }
 
   /**
