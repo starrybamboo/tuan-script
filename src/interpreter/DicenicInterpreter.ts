@@ -26,7 +26,8 @@ import {
   PostfixExpressionContext,
   TernaryExpressionContext,
   IfStatementContext,
-  BlockContext
+  BlockContext,
+  WhileStatementContext
 } from '../generated/DicenicParser';
 import { ExecutionContext } from './ExecutionContext';
 import { DicenicValue, VariableType } from './types';
@@ -35,14 +36,21 @@ import { DiceCalculator } from '../utils/DiceCalculator';
 import { StringInterpolator } from '../utils/StringInterpolator';
 import { ParseTree } from 'antlr4ts/tree/ParseTree';
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
+import { ErrorHandler, RuntimeError, VariableAccessError, DiceError, LoopError } from '../errors';
 
 export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
   private context: ExecutionContext;
   private lastValue: DicenicValue;
+  private errorHandler: ErrorHandler;
+  
+  // 性能优化：缓存常用的默认值对象，避免重复创建
+  private static readonly DEFAULT_NUMBER_VALUE: DicenicValue = { type: VariableType.NUMBER, value: 0 };
+  private static readonly DEFAULT_STRING_VALUE: DicenicValue = { type: VariableType.STRING, value: '' };
 
-  constructor(context?: ExecutionContext) {
+  constructor(context?: ExecutionContext, errorHandler?: ErrorHandler) {
     this.context = context || new ExecutionContext();
-    this.lastValue = { type: VariableType.NUMBER, value: 0 };
+    this.lastValue = DicenicInterpreter.DEFAULT_NUMBER_VALUE;
+    this.errorHandler = errorHandler || new ErrorHandler();
   }
 
   /**
@@ -150,6 +158,54 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
     
     // 如果没有执行任何分支，返回默认值
     return { type: VariableType.NUMBER, value: 0 };
+  }
+
+  /**
+   * 访问while循环语句节点
+   * 实现循环条件判断和循环体执行，包含循环深度限制防止无限循环
+   * @param ctx while语句上下文
+   * @returns while循环执行结果
+   */
+  visitWhileStatement(ctx: WhileStatementContext): DicenicValue {
+    let result: DicenicValue = { type: VariableType.NUMBER, value: 0 };
+    let loopCount = 0;
+    const maxLoopCount = 10000; // 防止无限循环的最大迭代次数
+    
+    // 获取条件表达式和循环体语句
+    const conditionExpression = ctx.expression();
+    const bodyStatement = ctx.statement();
+    
+    // 循环执行
+    while (loopCount < maxLoopCount) {
+      // 计算条件表达式
+      const conditionValue = this.visit(conditionExpression);
+      const condition = TypeConverter.toBoolean(conditionValue);
+      
+      // 如果条件为假，退出循环
+      if (!condition) {
+        break;
+      }
+      
+      // 执行循环体
+      result = this.visit(bodyStatement);
+      // 更新最后值
+      this.lastValue = result;
+      
+      loopCount++;
+    }
+    
+    // 如果达到最大循环次数，处理循环错误
+    if (loopCount >= maxLoopCount) {
+      this.errorHandler.handleLoopError(
+        'While loop exceeded maximum iteration count, terminating to prevent infinite loop',
+        'while',
+        maxLoopCount,
+        ctx.start.line,
+        ctx.start.charPositionInLine
+      );
+    }
+    
+    return result;
   }
 
   /**
@@ -329,8 +385,15 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
     try {
       return DiceCalculator.evaluateDiceExpression(text);
     } catch (error) {
-      console.warn(`Failed to evaluate dice expression: ${text}`, error);
-      return { type: VariableType.NUMBER, value: 0 };
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const result = this.errorHandler.handleDiceError(
+        `Failed to evaluate dice expression: ${errorMessage}`,
+        text,
+        ctx.start.line,
+        ctx.start.charPositionInLine
+      );
+      
+      return result || { type: VariableType.NUMBER, value: 0 };
     }
   }
 
@@ -356,6 +419,46 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
    */
   getLastValue(): DicenicValue {
     return this.lastValue;
+  }
+
+  /**
+   * 获取错误处理器
+   * @returns 错误处理器实例
+   */
+  getErrorHandler(): ErrorHandler {
+    return this.errorHandler;
+  }
+
+  /**
+   * 设置错误处理器
+   * @param errorHandler 新的错误处理器
+   */
+  setErrorHandler(errorHandler: ErrorHandler): void {
+    this.errorHandler = errorHandler;
+  }
+
+  /**
+   * 检查是否有错误
+   * @returns 是否有错误
+   */
+  hasErrors(): boolean {
+    return this.errorHandler.hasErrors();
+  }
+
+  /**
+   * 检查是否有警告
+   * @returns 是否有警告
+   */
+  hasWarnings(): boolean {
+    return this.errorHandler.hasWarnings();
+  }
+
+  /**
+   * 获取错误摘要
+   * @returns 错误摘要信息
+   */
+  getErrorSummary() {
+    return this.errorHandler.getSummary();
   }
 
   /**
@@ -476,6 +579,23 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
    * @returns 运算结果
    */
   private performArithmeticOperation(left: DicenicValue, right: DicenicValue, operator: string): DicenicValue {
+    // 对于+运算符，检查是否应该进行字符串连接
+    if (operator === '+') {
+      // 如果其中一个操作数是非数字字符串，则进行字符串连接
+      const leftIsNonNumericString = left.type === VariableType.STRING && isNaN(parseFloat(left.value as string));
+      const rightIsNonNumericString = right.type === VariableType.STRING && isNaN(parseFloat(right.value as string));
+      
+      if (leftIsNonNumericString || rightIsNonNumericString) {
+        // 进行字符串连接
+        const leftStr = TypeConverter.toString(left);
+        const rightStr = TypeConverter.toString(right);
+        return {
+          type: VariableType.STRING,
+          value: leftStr + rightStr
+        };
+      }
+    }
+    
     // 将操作数转换为数字进行算术运算
     const leftNum = TypeConverter.toNumber(left);
     const rightNum = TypeConverter.toNumber(right);
@@ -912,7 +1032,12 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
         
         // 检查写入权限
         if (!this.context.canWriteSpecialVariable(prefix)) {
-          throw new Error(`Cannot write to read-only variable: ${text}`);
+          this.errorHandler.handleVariableAccessError(
+            `Cannot write to read-only variable: ${text}`,
+            text,
+            'write'
+          );
+          return finalValue; // 返回值但不执行赋值
         }
         
         this.context.setSpecialVariable(prefix, name, finalValue);
