@@ -28,7 +28,7 @@
     "typescript"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "CC-BY-4.0",
   "dependencies": {
     "antlr4ts": "^0.5.0-alpha.4"
   },

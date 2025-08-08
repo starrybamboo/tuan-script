@@ -2,6 +2,12 @@
  * Dicenic脚本语言解析器主入口文件
  * 
  * 提供简洁的API接口用于解析和执行Dicenic脚本
+ * 
+ * @copyright 2024 [Your Name]
+ * @license CC-BY-4.0
+ * 
+ * This work is licensed under the Creative Commons Attribution 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/
  */
 
 import { ANTLRInputStream, CommonTokenStream } from 'antlr4ts';

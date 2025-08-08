@@ -1,0 +1,29 @@
+Dicenic Script Parser
+Copyright 2024 [Your Name]
+
+This work is licensed under the Creative Commons Attribution 4.0 International License.
+To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/
+or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+ATTRIBUTION REQUIREMENTS:
+When using, sharing, or adapting this work, you must:
+1. Give appropriate credit to the original author
+2. Provide a link to the license
+3. Indicate if changes were made
+4. Do not suggest the licensor endorses you or your use
+
+Example attribution:
+"Dicenic Script Parser" by [Your Name] is licensed under CC BY 4.0.
+Available at: [Your Repository URL]
+
+This software contains the following third-party components:
+
+ANTLR4 TypeScript Runtime
+Copyright (c) 2016-2017 The ANTLR Project
+Licensed under the BSD 3-Clause License
+https://github.com/antlr/antlr4-typescript
+
+TypeScript
+Copyright (c) Microsoft Corporation
+Licensed under the Apache License, Version 2.0
+https://github.com/microsoft/TypeScript

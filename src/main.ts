@@ -3,6 +3,12 @@
 /**
  * Dicenic脚本语言解析器命令行工具
  * 用于读取和执行Dicenic脚本文件
+ * 
+ * @copyright 2024 [Your Name]
+ * @license CC-BY-4.0
+ * 
+ * This work is licensed under the Creative Commons Attribution 4.0 International License.
+ * To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/
  */
 
 import * as fs from 'fs';
