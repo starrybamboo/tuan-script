@@ -124,10 +124,10 @@ ELSE: 'else';
 WHILE: 'while';
 
 // 特殊变量：$前缀 + [arsd] + 标识符
-SPECIAL_VAR: '$' [arsd] [a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*;
+SPECIAL_VAR: '$' [arsd] [a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5-]*;
 
-// 标识符：支持中文字符
-IDENTIFIER: [a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5]*;
+// 标识符：支持中文字符和连字符
+IDENTIFIER: [a-zA-Z_\u4e00-\u9fa5][a-zA-Z0-9_\u4e00-\u9fa5-]*;
 
 // 运算符
 ASSIGN: '=';

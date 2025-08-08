@@ -469,7 +469,7 @@ describe('综合集成测试', () => {
         "原名: " + original_name + ", 当前名: " + current_name
       `;
       
-      const result = executeScript(script);
+      const result = executeScript(script, options);
       // 由于错误恢复机制，脚本会继续执行，但会有错误记录
       // 只读变量写入失败，但读取应该正常工作
       expect(result.result).toBe('原名: 测试角色, 当前名: 测试角色');

@@ -1,0 +1,27 @@
+// 战斗系统示例
+
+// 角色状态
+player_hp = 80
+enemy_hp = 60
+player_attack = 2d6 + 4
+enemy_attack = 1d8 + 2
+
+// 模拟一轮战斗
+player_damage = player_attack
+enemy_damage = enemy_attack
+
+// 计算战斗后的生命值
+player_hp_after = player_hp - enemy_damage
+enemy_hp_after = enemy_hp - player_damage
+
+// 判断战斗结果
+player_status = player_hp_after > 0 ? "存活" : "倒下"
+enemy_status = enemy_hp_after > 0 ? "存活" : "被击败"
+
+// 输出战斗报告
+"=== 战斗报告 ===" + "\n" +
+"玩家造成伤害: " + player_damage + " 点" + "\n" +
+"敌人造成伤害: " + enemy_damage + " 点" + "\n\n" +
+"战斗后状态:" + "\n" +
+"玩家生命值: " + player_hp_after + " (" + player_status + ")" + "\n" +
+"敌人生命值: " + enemy_hp_after + " (" + enemy_status + ")"

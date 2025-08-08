@@ -13,7 +13,10 @@
     "test:watch": "jest --watch",
     "clean": "rimraf dist src/generated/*.ts",
     "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix"
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "main": "ts-node src/main.ts",
+    "start": "npm run build && node dist/main.js",
+    "run-script": "npm run build && node dist/main.js"
   },
   "keywords": [
     "parser",
@@ -39,7 +42,8 @@
     "eslint": "^8.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "rimraf": "^5.0.0"
+    "rimraf": "^5.0.0",
+    "ts-node": "^10.0.0"
   },
   "files": [
     "dist/**/*",

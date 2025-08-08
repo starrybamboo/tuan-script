@@ -175,13 +175,13 @@ describe('赋值表达式测试', () => {
 
     test('应该拒绝对只读特殊变量的赋值 ($r)', () => {
       expect(() => {
-        executeScript('$r角色名 = "测试角色"');
+        executeScript('$r角色名 = "测试角色"', { errorConfig: { enableRecovery: false } });
       }).toThrow('Cannot write to read-only variable');
     });
 
     test('应该拒绝对只读特殊变量的赋值 ($s)', () => {
       expect(() => {
-        executeScript('$s系统版本 = "1.0"');
+        executeScript('$s系统版本 = "1.0"', { errorConfig: { enableRecovery: false } });
       }).toThrow('Cannot write to read-only variable');
     });
   });

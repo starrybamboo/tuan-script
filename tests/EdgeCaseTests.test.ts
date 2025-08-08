@@ -556,9 +556,9 @@ describe('边界情况测试', () => {
       ]);
 
       const script = `
-        $r name = "new name"
-        $s version = "2.0"
-        result = $r name + " " + $s version
+        $rname = "new name"
+        $sversion = "2.0"
+        result = $rname + " " + $sversion
         result
       `;
       

@@ -148,19 +148,22 @@ export class ErrorHandler {
    * @param accessType 访问类型
    * @param line 行号
    * @param column 列号
-   * @throws VariableAccessError 如果不启用错误恢复
+   * @param forceThrow 是否强制抛出异常（用于测试中期望抛出异常的情况）
+   * @throws VariableAccessError 如果不启用错误恢复或者forceThrow为true
    */
   handleVariableAccessError(
     message: string,
     variableName: string,
     accessType: 'read' | 'write',
     line: number = -1,
-    column: number = -1
+    column: number = -1,
+    forceThrow: boolean = false
   ): void {
     const error = new VariableAccessError(message, variableName, accessType, line, column);
     this.addError(error);
 
-    if (!this.config.enableRecovery) {
+    // 如果强制抛出或者不启用错误恢复，则抛出异常
+    if (forceThrow || !this.config.enableRecovery) {
       throw error;
     }
 
@@ -247,6 +250,18 @@ export class ErrorHandler {
    */
   private addWarning(warning: string): void {
     this.warnings.push(warning);
+  }
+
+  /**
+   * 公共方法：添加警告信息
+   * @param warning 警告信息
+   */
+  addPublicWarning(warning: string): void {
+    this.addWarning(warning);
+    
+    if (this.config.logWarnings) {
+      console.warn(warning);
+    }
   }
 
   /**

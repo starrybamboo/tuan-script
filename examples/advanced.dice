@@ -1,0 +1,32 @@
+// 高级Dicenic脚本示例 - 使用特殊变量和上下文
+
+// 使用角色信息
+character_name = $r姓名
+character_class = $r职业
+character_level = $r等级
+
+// 使用属性
+strength = $a力量
+agility = $a敏捷
+hp = $a生命值
+
+// 计算属性修正值
+str_modifier = (strength - 10) / 2
+agi_modifier = (agility - 10) / 2
+
+// 进行属性检定
+difficulty = 15
+str_roll = 1d20 + str_modifier
+agi_roll = 1d20 + agi_modifier
+
+// 判断检定结果
+str_result = str_roll >= difficulty ? "成功" : "失败"
+agi_result = agi_roll >= difficulty ? "成功" : "失败"
+
+// 输出完整的检定报告
+"=== 角色检定报告 ===" + "\n" +
+"角色: " + character_name + " (" + character_class + " " + character_level + "级)" + "\n" +
+"当前生命值: " + hp + "\n\n" +
+"力量检定 (难度" + difficulty + "): " + str_roll + " - " + str_result + "\n" +
+"敏捷检定 (难度" + difficulty + "): " + agi_roll + " - " + agi_result + "\n\n" +
+"系统信息: " + $s游戏名 + " v" + $s版本

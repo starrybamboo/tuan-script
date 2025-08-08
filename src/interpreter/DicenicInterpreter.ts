@@ -331,7 +331,12 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
     }
     
     // 处理转义字符
-    text = text.replace(/\\"/g, '"').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+    text = text.replace(/\\"/g, '"')
+               .replace(/\\'/g, "'")
+               .replace(/\\\\/g, '\\')
+               .replace(/\\n/g, '\n')
+               .replace(/\\t/g, '\t')
+               .replace(/\\r/g, '\r');
     
     // 处理字符串插值
     if (StringInterpolator.hasInterpolation(text)) {
@@ -614,7 +619,7 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
         break;
       case '/':
         if (rightNum === 0) {
-          console.warn('Division by zero, returning 0');
+          this.errorHandler.addPublicWarning('Division by zero, returning 0');
           result = 0;
         } else {
           result = leftNum / rightNum;
@@ -622,7 +627,7 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
         break;
       case '%':
         if (rightNum === 0) {
-          console.warn('Modulo by zero, returning 0');
+          this.errorHandler.addPublicWarning('Modulo by zero, returning 0');
           result = 0;
         } else {
           result = leftNum % rightNum;
@@ -1040,7 +1045,17 @@ export class DicenicInterpreter implements DicenicVisitor<DicenicValue> {
           return finalValue; // 返回值但不执行赋值
         }
         
-        this.context.setSpecialVariable(prefix, name, finalValue);
+        try {
+          this.context.setSpecialVariable(prefix, name, finalValue);
+        } catch (error) {
+          // 这里不应该发生，因为我们已经检查了权限
+          this.errorHandler.handleVariableAccessError(
+            error instanceof Error ? error.message : String(error),
+            text,
+            'write'
+          );
+          return finalValue;
+        }
       } else {
         throw new Error(`Invalid special variable format: ${text}`);
       }
